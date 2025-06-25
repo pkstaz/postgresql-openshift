@@ -1,0 +1,19 @@
+1. Obtén la contraseña de PostgreSQL ejecutando:
+
+   kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgresql.fullname" . }}-secret -o jsonpath="{.data.password}" | base64 --decode
+
+2. Para conectarte a tu base de datos PostgreSQL, ejecuta:
+
+   kubectl run {{ include "postgresql.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ .Release.Namespace }} --image registry.redhat.io/rhel8/postgresql-15 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host {{ include "postgresql.fullname" . }} -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }} -p {{ .Values.postgresql.service.port }}
+
+3. Para conectarte desde fuera del cluster, ejecuta:
+
+   kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "postgresql.fullname" . }} {{ .Values.postgresql.service.port }}:{{ .Values.postgresql.service.port }}
+
+   Y luego conéctate usando:
+   psql --host 127.0.0.1 -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }} -p {{ .Values.postgresql.service.port }}
+
+Configuración de la base de datos:
+- Base de datos: {{ .Values.postgresql.database }}
+- Usuario: {{ .Values.postgresql.username }}
+- Puerto: {{ .Values.postgresql.service.port }}

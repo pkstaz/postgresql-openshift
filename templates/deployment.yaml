@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "postgresql.fullname" . }}
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "postgresql.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "postgresql.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "postgresql.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        {{- if .Values.postgresql.securityContext.runAsUser }}
+        runAsUser: {{ .Values.postgresql.securityContext.runAsUser }}
+        {{- end }}
+        {{- if .Values.postgresql.securityContext.fsGroup }}
+        fsGroup: {{ .Values.postgresql.securityContext.fsGroup }}
+        {{- end }}
+      containers:
+      - name: postgresql
+        image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+        imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        env:
+        - name: POSTGRESQL_DATABASE
+          value: {{ .Values.postgresql.database | quote }}
+        - name: POSTGRESQL_USER
+          value: {{ .Values.postgresql.username | quote }}
+        - name: POSTGRESQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "postgresql.fullname" . }}-secret
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: run-volume
+          mountPath: /var/run/postgresql
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          {{- toYaml .Values.postgresql.resources | nindent 12 }}
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - pg_isready -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - pg_isready -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: postgresql-data
+        {{- if .Values.postgresql.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "postgresql.fullname" . }}-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: tmp-volume
+        emptyDir: {}
+      - name: run-volume
+        emptyDir: {}

@@ -1,0 +1,62 @@
+# Configuración de PostgreSQL
+postgresql:
+  # Credenciales de la base de datos
+  database: "mydb"
+  username: "postgres"
+  password: "postgres123"
+  
+  # Configuración de la imagen
+  image:
+    repository: "registry.redhat.io/rhel8/postgresql-15"
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  # Recursos
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  # Almacenamiento
+  persistence:
+    enabled: true
+    size: "8Gi"
+    storageClass: ""
+  
+  # Puerto del servicio
+  service:
+    port: 5432
+    type: ClusterIP
+
+  # Configuración de seguridad para OpenShift
+  securityContext:
+    # Dejar vacío para que OpenShift asigne automáticamente
+    runAsUser: null
+    fsGroup: null
+
+# OpenShift Security Context Constraint
+securityContextConstraint:
+  # Si se debe crear un SCC personalizado (requiere permisos de cluster-admin)
+  create: false
+
+# Configuración del despliegue
+replicaCount: 1
+
+# ServiceAccount
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Etiquetas y metadatos
+nameOverride: ""
+fullnameOverride: ""
