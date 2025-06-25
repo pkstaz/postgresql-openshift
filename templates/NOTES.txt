@@ -1,19 +1,38 @@
-1. Obtén la contraseña de PostgreSQL ejecutando:
+===============================================================================
+🎉 PostgreSQL has been successfully installed!
+===============================================================================
+
+1. Get the PostgreSQL password by running:
 
    kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgresql.fullname" . }}-secret -o jsonpath="{.data.password}" | base64 --decode
 
-2. Para conectarte a tu base de datos PostgreSQL, ejecuta:
+2. To connect to your PostgreSQL database, run:
 
    kubectl run {{ include "postgresql.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ .Release.Namespace }} --image registry.redhat.io/rhel8/postgresql-15 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host {{ include "postgresql.fullname" . }} -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }} -p {{ .Values.postgresql.service.port }}
 
-3. Para conectarte desde fuera del cluster, ejecuta:
+3. To connect from outside the cluster, run:
 
    kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "postgresql.fullname" . }} {{ .Values.postgresql.service.port }}:{{ .Values.postgresql.service.port }}
 
-   Y luego conéctate usando:
+   Then connect using:
    psql --host 127.0.0.1 -U {{ .Values.postgresql.username }} -d {{ .Values.postgresql.database }} -p {{ .Values.postgresql.service.port }}
 
-Configuración de la base de datos:
-- Base de datos: {{ .Values.postgresql.database }}
-- Usuario: {{ .Values.postgresql.username }}
-- Puerto: {{ .Values.postgresql.service.port }}
+📋 Database Configuration:
+- Deployment name: {{ include "postgresql.fullname" . }}
+- Database: {{ .Values.postgresql.database }}
+- Username: {{ .Values.postgresql.username }}
+- Port: {{ .Values.postgresql.service.port }}
+
+📚 Documentation:
+- Installation guide: docs/INSTALL.md
+- Naming conventions: NAMING.md
+- Complete documentation: README.md
+
+💡 Created resources use the installation name ({{ .Release.Name }}) for easy identification.
+
+🔧 Useful commands:
+- View logs: oc logs deployment/{{ include "postgresql.fullname" . }}
+- Check status: oc get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+- Backup: oc exec deployment/{{ include "postgresql.fullname" . }} -- pg_dump -U {{ .Values.postgresql.username }} {{ .Values.postgresql.database }} > backup.sql
+
+===============================================================================
